@@ -34,10 +34,10 @@ def main():
     # This must be done before any Player objects are created
     Player.containers = (updatable, drawable) 
     Asteroid.containers = (asteroids, updatable, drawable)
-    AsteroidField.containers = (updatable)
+    AsteroidField.containers = (updatable,)
     Shot.containers = (shots, updatable, drawable)
 
-    # Initalise the player object
+    # Initialise the player object
     player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
     # Initialise the asteroid field
@@ -59,23 +59,20 @@ def main():
         # Update
         updatable.update(dt)
 
-        # Check if any asteroids collide with player
-        for asteroid in asteroids:
-            # If there is a collision
-            if asteroid.collides_with(player):
-                # Log the collision
-                log_event("player_hit")
-                # Print notification
-                print("Game Over!")
-                # Exit program
-                sys.exit()
-
+        # resolve shot hits *before* player hits
         for asteroid in asteroids:
             for shot in shots:
                 if asteroid.collides_with(shot):
-                    log_event("asteroid_shot")
-                    asteroid.kill()
-                    shot.kill()
+                    asteroid.split()
+                    shot.kill()  # important, remove the shot
+                    break  # stop checking this asteroid against more shots
+
+        # now check player collisions, using the updated asteroids group
+        for asteroid in asteroids:
+            if asteroid.collides_with(player):
+                log_event("player_hit")
+                print("Game Over!")
+                sys.exit()
 
         # Draw
         for obj in drawable:
